@@ -1,0 +1,5 @@
+1-import category level 1 by odoo import
+1-1 update db by this command for avoid space :update product_category set name =trim(name);
+2-import category levele 2 by convert addons (model:	artarad.convert function: import_category_level2 )
+3-import Units manually.
+4-import product by convert addons (model:	artarad.convert function: import_product )
