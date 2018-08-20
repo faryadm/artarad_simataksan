@@ -73,8 +73,11 @@ class MrpBom(models.Model):
 
 
     def create_bom_line(self):
-
-
+        
+        error1="فقط یک حالات از ویژگی زیر برای محصول قابل قبول است. برای رفع این محدودیت با توسعه دهنده صحبت کنید"
+        error2="ویژگی زیر در محصول نا مشخص است"
+        warning1="تمام حالات ویژگی زیر در محصول وجود ندارد"
+        lasterr_pro_at=None
         self.env['mrp.bom.line'].search([('bom_id', '=', self.ids[0])]).unlink()
 
         for bomt_line in self.product_template_ids:
@@ -86,20 +89,23 @@ class MrpBom(models.Model):
               aa = set(protem_att_line.value_ids) & set(bomt_line.component_variant_ids)
               if aa:     #if child template have a filter in this att
                 if len(aa)>1:
-                  raise UserError(_('Warning 1 %s' %protem_att_line.name))
-                single_value_atts += list(aa)
+                  raise UserError(_(error1+'\n\nproduct:%s\nattribute:%s' %(bomt_line.product_id.name,protem_att_line.attribute_id.name)))
+                else:
+                  single_value_atts += list(aa)
               elif len(protem_att_line.value_ids)==1:
                 single_value_atts += protem_att_line.value_ids
               else:
                 att_line_parent=bomt_line.bom_id.product_tmpl_id.attribute_line_ids.filtered(lambda att_li: att_li.attribute_id == protem_att_line.attribute_id)
                 if not att_line_parent:
-                     raise UserError(_('Please derermine this attribute : %s'%protem_att_line.attribute_id.name ))
+                     raise UserError(_(error2+'\n\nproduct:%s\nattribute:%s'%(bomt_line.product_id.name,protem_att_line.attribute_id.name)))
                 else:
                     att_line_parent=att_line_parent[0]
-                if set(protem_att_line.value_ids) >= set(att_line_parent.value_ids):
-                  var_atts.append(set(protem_att_line.value_ids) & set(att_line_parent.value_ids))
-                else:
-                  raise UserError(_('Error 2 %s' %bomt_line.product_id.name))
+                if not set(protem_att_line.value_ids) >= set(att_line_parent.value_ids):
+                  if lasterr_pro_at!= (bomt_line.product_id.name,protem_att_line.attribute_id.name)
+                    raise Warning(_(warning1+'\n\nproduct:%s\nattribute:%s'%(bomt_line.product_id.name,protem_att_line.attribute_id.name)))
+                    lasterr_pro_at=(bomt_line.product_id.name,protem_att_line.attribute_id.name)
+                var_atts.append(set(protem_att_line.value_ids) & set(att_line_parent.value_ids))
+
 
 
           var_atts = combs(var_atts) #posible variant_value combinations
